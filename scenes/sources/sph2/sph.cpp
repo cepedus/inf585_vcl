@@ -20,7 +20,7 @@ void scene_model::initialize_sph()
 
     // Rest density (consider 1000 Kg/m^3)
     const float rho0 = 1000.0f;
-    const float rho1 = rho0/3.f;
+    const float rho1 = rho0/5.f;
 
     // Stiffness (consider ~2000 - used in tait equation)
     const float stiffness = 2000.0f;
@@ -39,7 +39,7 @@ void scene_model::initialize_sph()
     const float epsilon = 1e-3f;
     for (float x = h; x < 1.0f - h; x = x + c * h)
     {
-        for (float y = -1.0f + h; y < 0.5f - h; y = y + c * h)
+        for (float y = -1.0f + h; y < 1.0f - h; y = y + c * h)
         {
             particle_element particle;
             particle.p = {x + epsilon * rand_interval(), y, 0}; // a zero value in z position will lead to a 2D simulation
@@ -233,7 +233,7 @@ void scene_model::setup_data(std::map<std::string, GLuint> &shaders, scene_struc
     sphere1.uniform.transform.scaling = sph_param.h / 5.0f;
 
     gui_param.display_field = true;
-    gui_param.display_particles = true;
+    gui_param.display_particles = false;
     gui_param.save_field = false;
 }
 
@@ -356,7 +356,7 @@ std::pair<float, float> scene_model::evaluate_display_field(const vcl::vec3 &p)
 // Initialize an image where local density is displayed
 void scene_model::initialize_field_image()
 {
-    size_t N = 50; // Image dimension
+    size_t N = 100; // Image dimension
 
     mesh quad = mesh_primitive_quad({-1, -1, 0}, {1, -1, 0}, {1, 1, 0}, {-1, 1, 0});
     quad.texture_uv = {{0, 1}, {1, 1}, {1, 0}, {0, 0}};
