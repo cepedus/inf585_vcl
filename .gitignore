@@ -3,6 +3,7 @@
 out/
 .vscode/
 CMakeLists.txt
+build/
 
 # Prerequisites
 *.d
