@@ -14,17 +14,17 @@ struct particle_element
     float rho;
     float pression;
 
-    particle_element() : p{0,0,0},v{0,0,0},a{0,0,0},rho(0),pression(0) {}
+    particle_element() : p{0, 0, 0}, v{0, 0, 0}, a{0, 0, 0}, rho(0), pression(0) {}
 };
 
 // SPH simulation parameters
 struct sph_parameters
 {
-    float h;     // influence distance of a particle
-    float rho0;  // rest density
-    float m;     // total mass of a particle
+    float h;         // influence distance of a particle
+    float rho0;      // rest density
+    float m;         // total mass of a particle
     float stiffness; // constant of tait equation (relation density / pression)
-    float nu;    // viscosity parameter
+    float nu;        // viscosity parameter
 };
 
 // Image used to display the water appearance
@@ -43,13 +43,12 @@ struct gui_parameters
     bool save_field;
 };
 
-
 struct scene_model : scene_base
 {
 
-    void setup_data(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui);
-    void frame_draw(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui);
-    void display(std::map<std::string,GLuint>& shaders, scene_structure& scene, gui_structure& gui);
+    void setup_data(std::map<std::string, GLuint> &shaders, scene_structure &scene, gui_structure &gui);
+    void frame_draw(std::map<std::string, GLuint> &shaders, scene_structure &scene, gui_structure &gui);
+    void display(std::map<std::string, GLuint> &shaders, scene_structure &scene, gui_structure &gui);
 
     std::vector<particle_element> particles;
     sph_parameters sph_param;
@@ -58,7 +57,7 @@ struct scene_model : scene_base
     void update_pression();
     void update_acceleration();
 
-    float evaluate_display_field(const vcl::vec3& p);
+    float evaluate_display_field(const vcl::vec3 &p);
 
     void initialize_sph();
     void initialize_field_image();
@@ -70,11 +69,9 @@ struct scene_model : scene_base
     vcl::segments_drawable borders;
 
     vcl::timer_event timer;
+
+    float kernel(vcl::vec3 p);
+    vcl::vec3 grad_kernel(vcl::vec3 p);
 };
-
-
-
-
-
 
 #endif

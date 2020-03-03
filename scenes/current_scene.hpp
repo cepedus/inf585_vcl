@@ -1,7 +1,7 @@
 #pragma once
 
 // Indicate here which exercise should be currently considered using its define keyword
-#define SCENE_DEFAULT_ANIMATION // replace this keyword to change the scene
+// #define SCENE_DEFAULT_ANIMATION // replace this keyword to change the scene
 
 // Help: The keywords associated to other scenes are listed below
 //
@@ -14,6 +14,6 @@
 // #define SCENE_PARTICLES_TRAJECTORY_SPRITES
 // #define SCENE_SHAPE_MATCHING
 // #define SCENE_SKINNING
-// #define SCENE_SPH
+#define SCENE_SPH
 // #define SCENE_SPHERE_COLLISION
 // #define SCENE_STABLE_FLUID

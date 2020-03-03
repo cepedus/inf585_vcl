@@ -4,6 +4,7 @@ out/
 .vscode/
 CMakeLists.txt
 build/
+imgui.ini
 
 # Prerequisites
 *.d
