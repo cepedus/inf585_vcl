@@ -1,7 +1,7 @@
 #pragma once
 
 #include "scenes/base/base.hpp"
-#ifdef SCENE_SPH
+#ifdef SCENE_SPH1
 
 // SPH Particle
 struct particle_element

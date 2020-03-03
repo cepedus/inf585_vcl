@@ -1,7 +1,7 @@
 
 #include "sph.hpp"
 #include "omp.h"
-#ifdef SCENE_SPH
+#ifdef SCENE_SPH1
 
 using namespace vcl;
 
