@@ -5,6 +5,10 @@ out/
 CMakeLists.txt
 build/
 imgui.ini
+*.png
+*.mp4
+*.jpg
+.DS_Store
 
 # Prerequisites
 *.d

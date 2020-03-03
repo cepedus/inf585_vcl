@@ -15,7 +15,6 @@
 #include "scenes/sources/particles_trajectory/sprites/sprites.hpp"
 #include "scenes/sources/shape_matching/shape_matching.hpp"
 #include "scenes/sources/skinning/skinning.hpp"
-// #include "scenes/sources/sph1/sph.hpp"
-#include "scenes/sources/sph2/sph.hpp"
+#include "scenes/sources/sph3/sph.hpp"
 #include "scenes/sources/sphere_collision/sphere_collision.hpp"
 #include "scenes/sources/stable_fluid/stable_fluid.hpp"
