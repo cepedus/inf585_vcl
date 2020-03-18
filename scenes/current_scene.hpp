@@ -14,6 +14,9 @@
 // #define SCENE_PARTICLES_TRAJECTORY_SPRITES
 // #define SCENE_SHAPE_MATCHING
 // #define SCENE_SKINNING
-#define SCENE_SPH3
+// #define SCENE_SPH1
+// #define SCENE_SPH2
+// #define SCENE_SPH3
+#define SCENE_SPH1_OPT
 // #define SCENE_SPHERE_COLLISION
 // #define SCENE_STABLE_FLUID

@@ -16,11 +16,12 @@ void scene_model::initialize_sph()
 #pragma omp parallel
     printf("thread %d\n", omp_get_thread_num());
     // Influence distance of a particle (size of the kernel)
-    const float h = 0.1f/2.f;
+    // const float h = 0.1f/2.f;
+    const float h = 0.1f;
 
     // Rest density (consider 1000 Kg/m^3)
     const float rho0 = 1000.0f;
-    const float rho1 = rho0/5.f;
+    const float rho1 = rho0/2.f;
 
     // Stiffness (consider ~2000 - used in tait equation)
     const float stiffness = 2000.0f;
@@ -39,17 +40,29 @@ void scene_model::initialize_sph()
     const float epsilon = 1e-3f;
     for (float x = h; x < 1.0f - h; x = x + c * h)
     {
-        for (float y = -1.0f + h; y < 0.5f - h; y = y + c * h)
+        for (float y = -1.0f + h; y < 0.0f - h; y = y + c * h)
         {
             particle_element particle;
             particle.p = {x + epsilon * rand_interval(), y, 0}; // a zero value in z position will lead to a 2D simulation
-            if (y >- 0.0f -h) {
-                particle.rho0 = rho0;
-                particle.m = m0;
-            } else {
-                particle.rho0 = rho1;
-                particle.m = m1;
-            }
+            particle.rho0 = rho0;
+            particle.m = m0;
+            particle.rigid = false;
+            particle.object = NULL;
+            particles.push_back(particle);
+        }
+    }
+
+    const size_t No = shapes.size();
+    for(size_t ko=0; ko<No; ++ko) {
+        shape_matching_object& object = shapes[ko];
+
+        for(size_t kv=0; kv<object.p.size(); ++kv) {
+            particle_element particle;
+            particle.p = object.p[kv];
+            particle.rho0 = rho1;
+            particle.m = m1;
+            particle.rigid = true;
+            particle.object = &object;
             particles.push_back(particle);
         }
     }
@@ -59,6 +72,33 @@ void scene_model::initialize_sph()
     sph_param.stiffness = stiffness;
     sph_param.k = 315 / (64 * PI * pow(h, 3));
     sph_param.gradk = -945 / (32 * PI * pow(h, 5));
+}
+
+// shape matching
+void scene_model::display_shapes_surface(std::map<std::string,GLuint>& shaders, scene_structure& scene)
+{
+    const size_t No = shapes.size();
+    for(size_t ko=0; ko<No; ++ko)
+    {
+        draw(shapes[ko].visual, scene.camera, shaders.at("mesh_bf"));
+        if(gui_param.wireframe)
+            draw(shapes[ko].visual, scene.camera, shaders.at("wireframe"));
+    }
+}
+
+void scene_model::display_bounding_spheres(std::map<std::string,GLuint>& , scene_structure& scene)
+{
+    const size_t No = shapes.size();
+    sphere_visual.uniform.transform.scaling = gui_param.radius_bounding_sphere;
+    for(size_t ko=0; ko<No; ++ko) {
+        shape_matching_object& object = shapes[ko];
+
+        for(size_t kv=0; kv<object.p.size(); ++kv) {
+            sphere_visual.uniform.transform.translation = object.p[kv];
+            draw(sphere_visual, scene.camera);
+        }
+    }
+
 }
 
 void scene_model::frame_draw(std::map<std::string, GLuint> &shaders, scene_structure &scene, gui_structure &gui)
@@ -113,9 +153,23 @@ void scene_model::frame_draw(std::map<std::string, GLuint> &shaders, scene_struc
                 p.x = 1 - epsilon * rand_interval();
                 v.x *= -0.1f;
             }
+            if (p.z < -0.1)
+            {
+                p.z = -0.1f + epsilon * rand_interval();
+                v.z *= -0.1f;
+            }
+            if (p.z > 0.1)
+            {
+                p.z = 0.1f - epsilon * rand_interval();
+                v.z *= -0.1f;
+            }
         }
     }
 
+    // Display shapes
+    display_shapes_surface(shaders, scene);
+    if(gui_param.bounding_spheres)
+        display_bounding_spheres(shaders, scene);
     display(shaders, scene, gui);
 }
 
@@ -156,11 +210,15 @@ void scene_model::update_density()
     for (size_t i = 0; i < N; i++)
     {
         rho = 0.0;
-#pragma omp parallel for reduction(+: rho)
+        #pragma omp parallel for reduction(+: rho)
         for (size_t j = 0; j < N; j++)
         {
-            p = particles[i].p - particles[j].p;
-            rho += particles[j].m * kernel(p);
+            if (false) {
+
+            } else {
+                p = particles[i].p - particles[j].p;
+                rho += particles[j].m * kernel(p);
+            }
         }
         particles[i].rho = rho;
     }
@@ -170,7 +228,7 @@ void scene_model::update_pression()
 {
     // Fill particles[i].pression = ...
     const size_t N = particles.size();
-#pragma omp parallel for
+    #pragma omp parallel for
     for (size_t i = 0; i < N; ++i)
     {
         if (particles[i].rho > (particles[i].rho0))
@@ -198,21 +256,32 @@ void scene_model::update_acceleration()
 
         // Add contribution of SPH forces
         // particles[i].a += ... (contribution from pression and viscosity)
-#pragma omp parallel for shared(p)
+        #pragma omp parallel for shared(p)
         for (size_t j = 0; j < N; ++j)
         {
-            p = particles[i].p - particles[j].p;
+            if (false) {
 
-            particles[i].a = particles[i].a - particles[j].m * ((particles[i].pression / pow(particles[i].rho, 2)) + (particles[j].pression / pow(particles[j].rho, 2))) * grad_kernel(p);
+            } else {
+                p = particles[i].p - particles[j].p;
 
-            particles[i].a = particles[i].a + 2 * sph_param.nu * (particles[j].m / particles[j].rho) * (dot(particles[i].p - particles[j].p, particles[i].v - particles[j].v) / (pow(norm(particles[i].p - particles[j].p), 2) + eps * h * h)) * grad_kernel(particles[i].p - particles[j].p);
+                particles[i].a = particles[i].a - particles[j].m * ((particles[i].pression / pow(particles[i].rho, 2)) + (particles[j].pression / pow(particles[j].rho, 2))) * grad_kernel(p);
+
+                particles[i].a = particles[i].a + 2 * sph_param.nu * (particles[j].m / particles[j].rho) * (dot(particles[i].p - particles[j].p, particles[i].v - particles[j].v) / (pow(norm(particles[i].p - particles[j].p), 2) + eps * h * h)) * grad_kernel(particles[i].p - particles[j].p);
+            }
         }
+
     }
 }
 
 void scene_model::setup_data(std::map<std::string, GLuint> &shaders, scene_structure &, gui_structure &gui)
 {
     gui.show_frame_camera = false;
+
+    // Initialize drawable parameters for shape matching
+    gui_param.radius_bounding_sphere = 0.2f;
+    object_length = 0.25f;
+    sphere_visual = mesh_primitive_sphere(gui_param.radius_bounding_sphere);
+    sphere_visual.shader = shaders["mesh"];
 
     sphere0 = mesh_drawable(mesh_primitive_sphere(1.0f));
     sphere0.shader = shaders["mesh"];
@@ -227,14 +296,29 @@ void scene_model::setup_data(std::map<std::string, GLuint> &shaders, scene_struc
     borders.uniform.color = {0, 0, 0};
     borders.shader = shaders["curve"];
 
+    // Create the basic mesh models: Cube, Cylinder, Torus
+    mesh_basic_model[surface_cube]     = mesh_primitive_bar_grid(4,4,2,{0,0,0},{object_length,0,0},{0,object_length,0},{0,0,object_length/4});
+
+    // Initialize a initial scene
+    initialize_shapes();
+
     initialize_sph();
     initialize_field_image();
+
+
+
+    // Load specific shaders
+    shaders["wireframe_quads"] = create_shader_program("scenes/shared_assets/shaders/wireframe_quads/shader.vert.glsl","scenes/shared_assets/shaders/wireframe_quads/shader.geom.glsl","scenes/shared_assets/shaders/wireframe_quads/shader.frag.glsl"); // Shader for quad meshes
+    shaders["normals"] = create_shader_program("scenes/shared_assets/shaders/normals/shader.vert.glsl","scenes/shared_assets/shaders/normals/shader.geom.glsl","scenes/shared_assets/shaders/normals/shader.frag.glsl"); // Shader to display normals
+
     sphere0.uniform.transform.scaling = sph_param.h / 5.0f;
     sphere1.uniform.transform.scaling = sph_param.h / 5.0f;
 
     gui_param.display_field = true;
-    gui_param.display_particles = false;
-    gui_param.save_field = true;
+    gui_param.display_particles = true;
+    gui_param.save_field = false;
+    gui_param.bounding_spheres = true;
+    gui_param.wireframe = true;
 }
 
 void scene_model::display(std::map<std::string, GLuint> &shaders, scene_structure &scene, gui_structure &)
@@ -263,7 +347,7 @@ void scene_model::display(std::map<std::string, GLuint> &shaders, scene_structur
         const size_t im_h = field_image.im.height;
         const size_t im_w = field_image.im.width;
         std::vector<unsigned char> &im_data = field_image.im.data;
-#pragma omp parallel for
+        #pragma omp parallel for
         for (size_t ky = 0; ky < im_h; ++ky)
         {
             for (size_t kx = 0; kx < im_w; ++kx)
@@ -326,6 +410,8 @@ void scene_model::set_gui()
         timer.stop();
     if (ImGui::Button("Start"))
         timer.start();
+
+    ImGui::Checkbox("Sphere", &gui_param.bounding_spheres); ImGui::SameLine();
 }
 
 // Fill an image with field computed as a distance function to the particles
@@ -335,7 +421,7 @@ std::pair<float, float> scene_model::evaluate_display_field(const vcl::vec3 &p)
     float field1 = 0.0f;
     const float d = 0.1f;
     const size_t N = particles.size();
-#pragma omp parallel for reduction(+ : field0, field1)
+    #pragma omp parallel for reduction(+ : field0, field1)
     for (size_t i = 0; i < N; ++i)
     {
         const vec3 &pi = particles[i].p;
@@ -371,6 +457,26 @@ void scene_model::initialize_field_image()
     field_image.quad.uniform.shading.ambiant = 1.0f;
     field_image.quad.uniform.shading.diffuse = 0.0f;
     field_image.quad.uniform.shading.specular = 0.0f;
+}
+
+void scene_model::initialize_shapes()
+{
+    // Clear in case there is existing shapes
+    shapes.clear();
+
+    // Shorthand notation to setup the basic shape models
+    const float& a = object_length;                    // size of the object
+    const float& r = gui_param.radius_bounding_sphere; // radius of the bounding sphere
+
+    // Create the scene
+    const vec3& color = {1,1,0.7f};
+    shapes.push_back( shape_matching_object(mesh_basic_model[surface_cube], {0,0,0}, {0,0,0}, {0,0,0}, color ) );
+    shapes[0].update_visual_model();
+    // shapes.push_back( shape_matching_object(mesh_basic_model[surface_cube], {a+2*r,0,-1+a/2+r}, {0,0,0}, {0,0,0},color ) );
+    // shapes.push_back( shape_matching_object(mesh_basic_model[surface_cube], {-a-2*r,0,-1+a/2+r}, {0,0,0}, {0,0,0},color ) );
+    // shapes.push_back( shape_matching_object(mesh_basic_model[surface_cube], {0,0,1} ,{0,0,0} , {0,0,0}, color ) );
+    // shapes.push_back( shape_matching_object(mesh_basic_model[surface_cylinder], {0,1,1.5} ,{0,0,0} , {0,0,0}, color ) );
+    // shapes.push_back( shape_matching_object(mesh_basic_model[surface_torus], {0,2,1} ,{0,0,0} , {0,0,0}, color ) );
 }
 
 #endif

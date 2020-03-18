@@ -1,20 +1,22 @@
 #pragma once
 
 #include "scenes/base/base.hpp"
-#include "shape_matching_object.hpp"
-#include <map>
-#ifdef SCENE_SPH3
+#ifdef SCENE_SPH1_OPT
 
-enum surface_type_enum {surface_cube};
-
-// SPH simulation parameters
-struct sph_parameters
+struct bouding_box
 {
-    float h;         // influence distance of a particle
-    float stiffness; // constant of tait equation (relation density / pression)
-    float nu;        // viscosity parameter
-    float k; // kernel coef.
-    float gradk; // grad kernel coef.
+    vcl::vec3 min{-1,-1,-1};
+    vcl::vec3 max{1,1,1};
+
+    float width = max.x - min.x;
+    float height = max.y - min.y;
+    float depth = max.z - min.z;
+
+    float step = 0.1f;
+
+    int nwidth = int(width/step)+1;
+    int nheight = (int(height/step)+1) * nwidth;
+    int ndepth = (int(depth/step)+1) * nheight;
 };
 
 // SPH Particle
@@ -27,17 +29,18 @@ struct particle_element
     // local density and pression
     float rho;
     float pression;
-    float rho0;
-    float m;
-
-    bool rigid;
-    shape_matching_object* object;
-
-
-    // sph_parameters * sph_param;
 
     particle_element() : p{0, 0, 0}, v{0, 0, 0}, a{0, 0, 0}, rho(0), pression(0) {}
+};
 
+// SPH simulation parameters
+struct sph_parameters
+{
+    float h;         // influence distance of a particle
+    float rho0;      // rest density
+    float m;         // total mass of a particle
+    float stiffness; // constant of tait equation (relation density / pression)
+    float nu;        // viscosity parameter
 };
 
 // Image used to display the water appearance
@@ -54,11 +57,6 @@ struct gui_parameters
     bool display_field;
     bool display_particles;
     bool save_field;
-
-    //shape matching
-    bool bounding_spheres;
-    bool wireframe;
-    float radius_bounding_sphere;
 };
 
 struct scene_model : scene_base
@@ -70,12 +68,13 @@ struct scene_model : scene_base
 
     std::vector<particle_element> particles;
     sph_parameters sph_param;
+    bouding_box bbox;
 
     void update_density();
     void update_pression();
     void update_acceleration();
 
-    std::pair<float, float> evaluate_display_field(const vcl::vec3 &p);
+    float evaluate_display_field(const vcl::vec3 &p);
 
     void initialize_sph();
     void initialize_field_image();
@@ -83,29 +82,15 @@ struct scene_model : scene_base
 
     gui_parameters gui_param;
     field_display field_image;
-    vcl::mesh_drawable sphere0, sphere1;
+    vcl::mesh_drawable sphere;
     vcl::segments_drawable borders;
 
     vcl::timer_event timer;
 
     float kernel(vcl::vec3 p);
     vcl::vec3 grad_kernel(vcl::vec3 p);
-
-    // shape matching
-
-    // Visual model of the bounding spheres
-    vcl::mesh_drawable sphere_visual;
-
-    // The set of shapes
-    std::vector<shape_matching_object> shapes;
-    float object_length; // Caracteristic length of each shape
-
-    // Storage for all the possible basic shapes (cube, cylinder, torus)
-    std::map<surface_type_enum, vcl::mesh> mesh_basic_model;
-
-    void initialize_shapes();
-    void display_shapes_surface(std::map<std::string,GLuint>& shaders, scene_structure& scene);
-    void display_bounding_spheres(std::map<std::string,GLuint>& shaders, scene_structure& scene);
+    std::map<int,std::vector<particle_element>> grid;
+    int hash(vcl::vec3 p);
 };
 
 #endif
