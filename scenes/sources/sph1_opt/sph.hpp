@@ -7,6 +7,8 @@ struct bouding_box
 {
     vcl::vec3 min{-1,-1,-1};
     vcl::vec3 max{1,1,1};
+    // vcl::vec3 min{0,0,0};
+    // vcl::vec3 max{1000,1000,1000};
 
     float width = max.x - min.x;
     float height = max.y - min.y;

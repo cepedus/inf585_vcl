@@ -8,8 +8,8 @@ using namespace vcl;
 // Counter used to save image on hard drive
 int counter_image = 0;
 const float PI = 3.14159;
-const float alpha = 2.0;
-const float eps = 0.01;
+const float alpha = 2.f;
+const float eps = 1e-12;
 
 int scene_model::hash(vec3 p) {
     float width, height, depth;
@@ -46,9 +46,14 @@ void scene_model::initialize_sph()
     const float c = 0.95f;
 
     float step = c*h;
-    const vec3 min{-0.5f,-0.5f,0.0f};
-    const vec3 max{0.5f,0.5f,step};
-    // const vec3 max{0.5f,0.5f,0.475f};
+    // vec3 mid = (bbox.max - bbox.min) / 2;
+    // const float sized = 0.4;
+    // vec3 diag{sized,sized,sized};
+    // vec3 min = mid - diag;
+    // vec3 max = mid + diag;
+    const vec3 min{-0.3f, 0.f,0.0f};
+    const vec3 max{0.3f, 2.f,step};
+    // const vec3 max{0.5f,1.0f,0.475f};
     int loc;
 
     // Fill a square with particles
@@ -131,6 +136,16 @@ void scene_model::frame_draw(std::map<std::string, GLuint> &shaders, scene_struc
                 p.x = bbox.max.x - epsilon * rand_interval();
                 v.x *= -0.1f;
             }
+            if (p.z < bbox.min.z)
+            {
+                p.z = bbox.min.z + epsilon * rand_interval();
+                v.z *= -0.1f;
+            }
+            if (p.z > bbox.max.z)
+            {
+                p.z = bbox.max.z - epsilon * rand_interval();
+                v.z *= -0.1f;
+            }
         }
 
         grid = std::map<int,std::vector<particle_element>>();
@@ -150,14 +165,15 @@ void scene_model::frame_draw(std::map<std::string, GLuint> &shaders, scene_struc
 float scene_model::kernel(vec3 p)
 {
     float h = sph_param.h;
-    if (norm(p) > h)
+    float r = norm(p);
+    if (r > h)
     {
         return 0.0;
     }
     else
     {
         float k = 315 / (64 * PI * pow(h, 3));
-        float v = pow(1. - pow(norm(p) / h, 2), 3);
+        float v = pow(1. - pow(r / h, 2), 3);
         return k * v;
     }
 }
@@ -165,7 +181,8 @@ float scene_model::kernel(vec3 p)
 vec3 scene_model::grad_kernel(vec3 p)
 {
     float h = sph_param.h;
-    if (norm(p) > h)
+    float r = norm(p);
+    if (r > h)
     {
         vec3 vc = {0., 0., 0.};
         return vc;
@@ -173,10 +190,69 @@ vec3 scene_model::grad_kernel(vec3 p)
     else
     {
         float k = -945 / (32 * PI * pow(h, 5));
-        float v = pow(1. - pow(norm(p) / h, 2), 2);
+        float v = pow(1. - pow(r / h, 2), 2);
         return k * v * p;
     }
 }
+
+// float scene_model::kernel(vec3 p)
+// {
+//     float h = sph_param.h;
+//     float r = norm(p);
+//     float q = r/h;
+//     float nconst = (1./PI) / pow(h,3);
+//     float tmp;
+//     if (r > eps)
+//     {
+//         if (q > 2.f)
+//         {
+//             return 0.f;
+//         }
+//         else if (q > 1.f)
+//         {
+//             tmp = 0.25f*pow(2.f - q, 3);
+//         }
+//         else
+//         {
+//             tmp = 1.f - 1.5f*pow(q,2) + 0.75f*pow(q,3);
+//         }
+//         return nconst * tmp;
+//     } else
+//     {
+//         return 0.f;
+//     }
+// }
+
+// vec3 scene_model::grad_kernel(vec3 p)
+// {
+//     float h = sph_param.h;
+//     float r = norm(p);
+//     float q = r/h;
+//     float nconst = (1./PI) / pow(h,3);
+//     float tmp, wdash;
+//     if (r > eps)
+//     {
+//         if (q > 2.f)
+//         {
+//             wdash = 0.f;
+//         }
+//         else if (q > 1.f)
+//         {
+//             wdash = -0.75f*pow(2.f - q, 2);
+//         }
+//         else
+//         {
+//             wdash = - 3.f*q*(1.f - 0.75f * q);
+//         }
+//         wdash = wdash * nconst;
+//         tmp = wdash / (r*h);
+//     }
+//     else
+//     {
+//         tmp = 0.f;
+//     }
+//     return tmp * p;
+// }
 
 void scene_model::update_density()
 {
@@ -305,7 +381,7 @@ void scene_model::setup_data(std::map<std::string, GLuint> &shaders, scene_struc
 
     gui_param.display_field = true;
     gui_param.display_particles = true;
-    gui_param.save_field = false;
+    gui_param.save_field = true;
 }
 
 void scene_model::display(std::map<std::string, GLuint> &shaders, scene_structure &scene, gui_structure &)

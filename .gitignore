@@ -42,3 +42,5 @@ imgui.ini
 *.exe
 *.out
 *.app
+.pytest_cache/v/cache/nodeids
+.pytest_cache/v/cache/stepwise
