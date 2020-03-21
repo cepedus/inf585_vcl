@@ -17,6 +17,8 @@
 // #define SCENE_SPH1
 // #define SCENE_SPH2
 // #define SCENE_SPH3
-#define SCENE_SPH1_OPT
+// #define SCENE_SPH1_OPT
+// #define SCENE_SPH4_SM
+#define SCENE_SPH5_SM
 // #define SCENE_SPHERE_COLLISION
 // #define SCENE_STABLE_FLUID

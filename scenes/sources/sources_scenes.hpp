@@ -19,5 +19,7 @@
 #include "scenes/sources/sph1_opt/sph.hpp"
 #include "scenes/sources/sph2/sph.hpp"
 #include "scenes/sources/sph3/sph.hpp"
+#include "scenes/sources/sph4_sm/sph.hpp"
+#include "scenes/sources/sph5_sm_opt/sph.hpp"
 #include "scenes/sources/sphere_collision/sphere_collision.hpp"
 #include "scenes/sources/stable_fluid/stable_fluid.hpp"

@@ -1,4 +1,13 @@
-# INF585 VCL
+# INF585 VCL: Projec ton SPH + Shape Matching
+
+## Scenes
+
+For this project we created a set of scenes described as follow:
+
+* SCENE_SPH1: TD from the class.
+* SCENE_SPH1_OPT: TD from the class with an acceleration structure (grid).
+* SCENE_SPH2: Two fluids with different densities.
+* SCENE_SPH5_SM: Accelaration grid, one fluid and one rigid body.
 
 ## Setup compilation in command line using the Makefile (in Linux only)
 
@@ -32,7 +41,7 @@ $ build/pgm
 
 (note: the build directory is temporary and can be removed safely when switching between different computers)
 
-### Note on Compilation / Execution 
+### Note on Compilation / Execution
 
 When editing the source code (without adding/removing files), you don't need to run CMake every time, but only call Makefile. The following command can be used from the vcl/ directory:
 
@@ -55,7 +64,7 @@ By default, a temporary directory build-cmake-Desktop-Default is created (in the
 
 
 
-## On Windows system with Visual Studio 
+## On Windows system with Visual Studio
 
 - Use CMakeLists.txt with Visual Studio
 - Precompiled version of GLFW3 is provided (precompiled/glfw3_win)
